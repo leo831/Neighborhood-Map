@@ -1,3 +1,4 @@
+// Locations used to get data info
 var places = [{
         title: 'Gino\'s Fine Italian Food',
         lat: 36.6534953,
@@ -28,7 +29,6 @@ var places = [{
 var map;
 var infoWindow;
 
-
 function Location(data) {
     var self = this;
     this.name = data.title;
@@ -36,91 +36,95 @@ function Location(data) {
     this.long = data.long;
     this.visible = ko.observable(true);
     var venue_Id = getVenueID(data.lat, data.lng, data.title);
+    //console.log(getVenueID(data.lat, data.lng, data.title));
 
     // Return venueId of places
-    function getVenueID() {
+    function getVenueID(venue_Id) {
         var venue_Id;
         var data = $.ajax({
             url: 'https://api.foursquare.com/v2/venues/search',
             type: 'GET',
             dataType: 'JSON',
-            async: false,
+            async: true,
             data: {
                 ll: self.lat + "," + self.long,
                 client_id: "OOP4UD2NULX4YWM0WNDAKCDDN5AOZSQJYZCERJXNHRCAP3RH",
                 client_secret: "DU0S5DBQQD5SIZB1NIYSU3YJ2GOFKJ2WDY4MLT5O3C2TTFLH",
                 v: '20150609'
             },
+
             error: function() {
                 alert("An error has occurred");
-            }
-        }).responseJSON;
-        $.each(data.response.venues, function(i, item) {
-            if (item.name == self.name) {
-                venue_Id = item.id;
-            }
-        });
-        return venue_Id;
-    }
-
-    // Retrieve latest photos
-    this.foursquare_Photos = function() {
-        var photos = [];
-        var photossUrl = 'https://api.foursquare.com/v2/venues/' + venue_Id + '/photos';
-        $.ajax({
-            url: photossUrl,
-            type: 'GET',
-            dataType: 'JSON',
-            data: {
-                client_id: "OOP4UD2NULX4YWM0WNDAKCDDN5AOZSQJYZCERJXNHRCAP3RH",
-                client_secret: "DU0S5DBQQD5SIZB1NIYSU3YJ2GOFKJ2WDY4MLT5O3C2TTFLH",
-                v: '20150609',
-                limit: 1,
-                sort: 'recent'
-            }
-        }).done(function(data) {
-            $.each(data.response.photos.items, function(i, photo) {
-                photos.push('<div class="photo"><img src=' + photo.prefix + photo.width + photo.suffix + '></div>');
-            });
-            self.photos = '<div class="photos">' + photos.join('') + '</div>';
-        }).fail(function(jqXHR, textStatus) {
-            alert(self.title + ': Photos Error!');
-        });
-    }();
-
-    // Retrieve latest comments for this location marker
-    this.getMenu = function() {
-        var menus = [];
-        $.ajax({
-            url: 'https://api.foursquare.com/v2/venues/' + venue_Id + '/menu',
-            type: 'GET',
-            dataType: 'JSON',
-            data: {
-                client_id: "OOP4UD2NULX4YWM0WNDAKCDDN5AOZSQJYZCERJXNHRCAP3RH",
-                client_secret: "DU0S5DBQQD5SIZB1NIYSU3YJ2GOFKJ2WDY4MLT5O3C2TTFLH",
-
-                v: '20150609'
             },
             success: function(data) {
-                //alert("AA");
-                //document.body.innerHTML = '<pre>' + JSON.stringify(data, null, 4) + '</pre>';
-                //alert(data.response.menu.menus.items);
-                $.each(data.response.menu.menus.items, function(i, item) {
-                    $.each(item.entries.items, function(i, menu) {
-                        //alert(menu.name);
-                        var name = '<strong>' + menu.name + '</strong>: ';
-                        menus.push('<li>' + name + '</li>');
-                    });
-                    //alert(item.entries.items);
-                });
-                self.menus = '<div class="menus">' + menus.join('') + '</div>';
+                $.each(data.response.venues, function(i, item) {
 
-            },
-            error: function() {
-                alert(self.title + ': Menu Error!');
+                    if (item.name == self.name) {
+                        venue_Id = item.id;
+
+                        // Ajax call to retreive photos
+                        var photos = [];
+                        var photossUrl = 'https://api.foursquare.com/v2/venues/' + venue_Id + '/photos';
+                        $.ajax({
+                            url: photossUrl,
+                            type: 'GET',
+                            dataType: 'JSON',
+                            data: {
+                                client_id: "OOP4UD2NULX4YWM0WNDAKCDDN5AOZSQJYZCERJXNHRCAP3RH",
+                                client_secret: "DU0S5DBQQD5SIZB1NIYSU3YJ2GOFKJ2WDY4MLT5O3C2TTFLH",
+                                v: '20150609',
+                                limit: 1,
+                                sort: 'recent'
+                            }
+                        }).done(function(data) {
+                            $.each(data.response.photos.items, function(i, photo) {
+                                photos.push('<div class="photo"><img src=' + photo.prefix + photo.width + photo.suffix + '></div>');
+                            });
+                            self.photos = '<div class="photos">' + photos.join('') + '</div>';
+                        }).fail(function(jqXHR, textStatus) {
+                            alert(self.title + ': Photos Error!');
+                        });
+
+                        // Ajax call to tretrieve Menu
+                        var menus = [];
+                        $.ajax({
+                            url: 'https://api.foursquare.com/v2/venues/' + venue_Id + '/menu',
+                            type: 'GET',
+                            dataType: 'JSON',
+                            data: {
+                                client_id: "OOP4UD2NULX4YWM0WNDAKCDDN5AOZSQJYZCERJXNHRCAP3RH",
+                                client_secret: "DU0S5DBQQD5SIZB1NIYSU3YJ2GOFKJ2WDY4MLT5O3C2TTFLH",
+
+                                v: '20150609'
+                            },
+                            success: function(data) {
+                                //alert("AA");
+                                //document.body.innerHTML = '<pre>' + JSON.stringify(data, null, 4) + '</pre>';
+                                //alert(data.response.menu.menus.items);
+                                $.each(data.response.menu.menus.items, function(i, item) {
+                                    $.each(item.entries.items, function(i, menu) {
+                                        //alert(menu.name);
+                                        var name = '<strong>' + menu.name + '</strong>: ';
+                                        menus.push('<li>' + name + '</li>');
+                                    });
+                                    //alert(item.entries.items);
+                                });
+                                self.menus = '<div class="menus">' + menus.join('') + '</div>';
+
+                            },
+                            error: function() {
+                                alert(self.title + ': Menu Error!');
+                            }
+                        })
+
+                    }
+                });
+
             }
-        })
-    }();
+        });
+
+        return venue_Id;
+    }
 
     infoWindow = new google.maps.InfoWindow();
     this.marker = new google.maps.Marker({
